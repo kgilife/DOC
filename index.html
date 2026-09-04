@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>醫護公會建檔系統</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <span class="badge">GitHub Pages + GAS</span>
+    <h1>醫護公會建檔系統</h1>
+    <div class="sub">業務員驗證 → 會員建檔 → 檢核 → 產生送件檔</div>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="stepper">
+  <div id="st1" class="step active">1. 業務員驗證</div>
+  <div id="st2" class="step">2. 會員基本資料</div>
+  <div id="st3" class="step">3. 檢核與送件檔</div>
+</div>
+
+<section id="page1" class="card">
+  <h2>服務業代資料</h2>
+  <div id="agentErr" class="errorbox"></div>
+  <div class="field">
+    <label class="req">業務員代碼</label>
+    <input id="agentCode" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="請輸入 10 碼業務員代碼">
+    <div class="hint">系統會直接讀取 Google Drive 原始 XLS 的「醫事機構代碼查詢」與「通訊處清單」核對資料。</div>
+  </div>
+  <div class="actions"><button id="agentNext" class="btn primary">下一步</button></div>
+</section>
+
+<section id="page2" class="hidden">
+  <div id="greeting" class="greeting"></div>
+  <div id="formErr" class="errorbox"></div>
+
+  <div class="card">
+    <h2>會員基本資料</h2>
+    <div class="field">
+      <label class="req">機構名稱</label>
+      <select id="institution"><option value="">請先完成業務員驗證</option></select>
+      <div class="hint" id="institutionHint">只顯示此業務員可服務的機構。</div>
+    </div>
+
+    <div class="grid">
+      <div class="field"><label class="req">部門單位</label><input id="department"></div>
+      <div class="field"><label class="req">會員姓名</label><input id="memberName"></div>
+    </div>
+
+    <div class="grid">
+      <div class="field"><label class="req">會員身分證號</label><input id="memberId" maxlength="10"></div>
+      <div class="field"><label>外籍人士</label><select id="memberForeign"><option value="">否</option><option>是</option></select></div>
+    </div>
+
+    <div class="grid">
+      <div class="field"><label class="req">會員出生日期</label><input id="memberBirth" type="date"></div>
+      <div class="field"><label class="req">行動電話</label><input id="mobile" inputmode="numeric" maxlength="10" placeholder="09xxxxxxxx"></div>
+    </div>
+
+    <div class="grid">
+      <div class="field"><label>聯絡電話（限1組）</label><input id="phone" inputmode="tel" placeholder="例如 02-12345678"></div>
+      <div class="field"><label>分機號碼</label><input id="ext" inputmode="numeric"></div>
+    </div>
+
+    <div class="section-title">聯絡地址</div>
+    <div class="grid3">
+      <div class="field"><label class="req">縣市</label><select id="city"></select></div>
+      <div class="field"><label class="req">鄉鎮市區</label><select id="district"></select></div>
+      <div class="field"><label class="req">路名</label><select id="road"></select></div>
+    </div>
+
+    <div class="grid">
+      <div class="field"><label class="req">街道巷弄門牌</label><input id="addressDetail"></div>
+      <div class="field"><label class="req">郵遞區號</label><input id="zipCode" inputmode="numeric" maxlength="6"></div>
+    </div>
+
+    <div class="field"><label class="req">會員電子郵件</label><input id="email" type="email" placeholder="例如 abc@example.com"></div>
+  </div>
+
+  <div class="card">
+    <h2>被保人投保資料</h2>
+    <div class="field"><label class="req">投保方案</label>
+      <select id="plan"><option value="">請選擇</option><option>方案一</option><option>方案二</option><option>方案三</option></select>
+    </div>
+
+    <div class="section-title">會員本人</div>
+    <div class="grid">
+      <div class="field"><label class="req">姓名</label><input id="selfName"></div>
+      <div class="field"><label class="req">身分證號</label><input id="selfId" maxlength="10"></div>
+    </div>
+    <div class="grid">
+      <div class="field"><label class="req">出生日期</label><input id="selfBirth" type="date"></div>
+      <div class="field"><label class="req">工作職稱內容</label><input id="selfJob"></div>
+    </div>
+    <div class="field"><label>外籍人士</label><select id="selfForeign"><option value="">否</option><option>是</option></select></div>
+
+    <div class="section-title">會員配偶（沒有則留白）</div>
+    <div class="grid">
+      <div class="field"><label>姓名</label><input id="spouseName"></div>
+      <div class="field"><label>身分證號</label><input id="spouseId" maxlength="10"></div>
+    </div>
+    <div class="grid">
+      <div class="field"><label>出生日期</label><input id="spouseBirth" type="date"></div>
+      <div class="field"><label>工作職稱內容</label><input id="spouseJob"></div>
+    </div>
+    <div class="field"><label>外籍人士</label><select id="spouseForeign"><option value="">否</option><option>是</option></select></div>
+  </div>
+
+  <div class="card">
+    <h2>會員信用卡資料</h2>
+    <div class="field"><label class="req">信用卡卡別</label>
+      <select id="cardType"><option value="">請選擇</option><option>VISA</option><option>MASTER</option><option>JCB</option></select>
+    </div>
+    <div class="grid">
+      <div class="field"><label class="req">信用卡卡號</label><input id="cardNo" inputmode="numeric" maxlength="16" placeholder="16 碼"></div>
+      <div class="field"><label class="req">持卡人姓名</label><input id="cardHolder"></div>
+    </div>
+    <div class="grid">
+      <div class="field"><label class="req">效期月份</label><select id="cardMonth"><option value="">月</option></select></div>
+      <div class="field"><label class="req">效期年份</label><select id="cardYear"><option value="">年</option></select></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="back1" class="btn secondary">上一步</button>
+    <button id="reviewBtn" class="btn primary">下一步：檢核資料</button>
+  </div>
+</section>
+
+<section id="page3" class="hidden">
+  <div class="card">
+    <h2>資料檢核完成</h2>
+    <div id="finalOk" class="okbox"></div>
+    <div id="finalErr" class="errorbox"></div>
+    <div id="review" class="review"></div>
+    <div class="actions">
+      <button id="back2" class="btn secondary">返回修改</button>
+      <button id="downloadBtn" class="btn primary">產生送件檔</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
