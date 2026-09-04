@@ -195,7 +195,11 @@ $("downloadBtn").onclick=async()=>{
     $("downloadBtn").textContent="產生中…";
     currentPayload=buildPayload();
     const data=await api("generateSubmission",{payload:currentPayload});
-    $("finalOk").innerHTML=`已產生 ${data.rows} 筆送件資料。<br><a href="${data.fileUrl}" target="_blank" rel="noopener">開啟送件檔：${data.fileName}</a>`;
+    let links = `<a href="${data.fileUrl}" target="_blank" rel="noopener">開啟送件檔：${data.fileName}</a>`;
+    if (data.downloadUrl && data.downloadUrl !== data.fileUrl) {
+      links += ` &nbsp;|&nbsp; <a href="${data.downloadUrl}" target="_blank" rel="noopener">下載 Excel 檔 (.xlsx)</a>`;
+    }
+    $("finalOk").innerHTML=`已產生 ${data.rows} 筆送件資料。<br>${links}`;
     $("finalOk").style.display="block";
   }catch(err){
     showError("finalErr",err.message);
