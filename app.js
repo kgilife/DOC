@@ -186,7 +186,82 @@ $("reviewBtn").onclick=()=>{
   window.scrollTo({top:0,behavior:"smooth"});
 };
 
-$("downloadBtn").onclick=async()=>{
+const HEADERS = [
+  "判斷碼", "保單號碼", "部門", "員工工號", "關係", "被保人姓名", "身分證號", "性別", "生日",
+  "銀行代碼", "分行代碼", "銀行帳號", "信用卡卡號", "信用卡到期日", "生效日", "退保日", "等級",
+  "險種", "保額", "薪資", "勞保薪資", "職級", "要保書填寫日", "監護宣告", "微型身障類別",
+  "微型家屬", "原住民", "羅馬拼音", "付款人姓名", "付款人身份證號", "付款人生日", "付款人與員工關係",
+  "聯絡電話(區碼)", "聯絡電話(不含區碼及分碼)", "聯絡電話(分機)", "連絡手機", "郵遞區號",
+  "聯絡地址(縣市)", "聯絡地址(鄉鎮區)", "聯絡地址(地址)", "Email", "服務機關縣市", "服務機關",
+  "部門單位", "工作內容", "登錄證字號1", "登錄證字號2", "X", "醫事機構代碼"
+];
+
+function generateAndDownloadExcel(payload) {
+  if (typeof XLSX === "undefined") {
+    throw new Error("Excel 模組尚未載入完成，請稍候重試或重新整理網頁。");
+  }
+  const people = [
+    { rel: '會員本人', p: payload.insurance.self },
+    { rel: '會員配偶', p: payload.insurance.spouse }
+  ].filter(x => x.p && (x.p.name || x.p.id));
+
+  if (!people.length) throw new Error('至少需要一位被保人');
+
+  const rows = people.map(x => {
+    const r = Array(49).fill('');
+    const m = payload.member || {};
+    const p = x.p || {};
+
+    r[2]  = m.department || '';
+    r[4]  = x.rel;
+    r[5]  = p.name || '';
+    r[6]  = p.id || '';
+    r[8]  = p.birth || '';
+    r[12] = payload.payment.cardNo || '';
+    r[13] = payload.payment.expiry || '';
+    r[28] = payload.payment.holder || '';
+
+    const tel = String(m.phone || '').trim();
+    const telMatch = tel.match(/^(0\d{1,2})[-\s]?(.+)$/);
+    if (telMatch) {
+      r[32] = telMatch[1];
+      r[33] = String(telMatch[2]).replace(/\D/g, '');
+    } else {
+      r[33] = tel.replace(/\D/g, '');
+    }
+
+    r[34] = m.ext || '';
+    r[35] = m.mobile || '';
+    r[36] = m.zip || '';
+    r[37] = m.city || '';
+    r[38] = m.district || '';
+    r[39] = (m.road || '') + (m.addressDetail || '');
+    r[40] = m.email || '';
+    r[42] = payload.institution.institutionName || '';
+    r[43] = m.department || '';
+    r[44] = p.job || '';
+    r[45] = payload.agent.agentCode || '';
+    r[48] = payload.institution.institutionCode || '';
+
+    return r;
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "資料區");
+
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const dateStr = `${yyyy}${mm}${dd}`;
+  const fileName = `醫護公會送件_${payload.agent.agentCode}_${dateStr}.xlsx`;
+
+  XLSX.writeFile(wb, fileName);
+  return { rows: rows.length, fileName };
+}
+
+$("downloadBtn").onclick=()=>{
   clearError("finalErr");
   const errs=validate();
   if(errs.length) return showError("finalErr","資料已被修改，請返回重新檢核：\n"+errs.join("\n"));
@@ -194,12 +269,8 @@ $("downloadBtn").onclick=async()=>{
     $("downloadBtn").disabled=true;
     $("downloadBtn").textContent="產生中…";
     currentPayload=buildPayload();
-    const data=await api("generateSubmission",{payload:currentPayload});
-    let links = `<a href="${data.fileUrl}" target="_blank" rel="noopener">開啟送件檔：${data.fileName}</a>`;
-    if (data.downloadUrl && data.downloadUrl !== data.fileUrl) {
-      links += ` &nbsp;|&nbsp; <a href="${data.downloadUrl}" target="_blank" rel="noopener">下載 Excel 檔 (.xlsx)</a>`;
-    }
-    $("finalOk").innerHTML=`已產生 ${data.rows} 筆送件資料。<br>${links}`;
+    const result=generateAndDownloadExcel(currentPayload);
+    $("finalOk").innerHTML=`<strong>已成功產生並直接下載送件檔至您的裝置！</strong><br>檔案名稱：${result.fileName}（共 ${result.rows} 筆送件資料）。<br><small style="color:var(--muted)">檔案已下載儲存至您裝置的「下載」資料夾。若未自動下載，可再次點選按鈕。</small>`;
     $("finalOk").style.display="block";
   }catch(err){
     showError("finalErr",err.message);
